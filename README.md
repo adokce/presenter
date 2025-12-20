@@ -21,23 +21,24 @@ First, install the dependencies:
 ```bash
 bun install
 ```
+
 ## Database Setup
 
 This project uses SQLite with Drizzle ORM.
 
 1. Start the local SQLite database:
+
 ```bash
 cd packages/db && bun run db:local
 ```
 
-
 2. Update your `.env` file in the `apps/web` directory with the appropriate connection details if needed.
 
 3. Apply the schema to your database:
+
 ```bash
 bun run db:push
 ```
-
 
 Then, run the development server:
 
@@ -45,13 +46,7 @@ Then, run the development server:
 bun run dev
 ```
 
-Open [http://localhost:3001](http://localhost:3001) in your browser to see your fullstack application.
-
-
-
-
-
-
+Open [http://localhost:3003](http://localhost:3003) in your browser to see your fullstack application.
 
 ## Project Structure
 
