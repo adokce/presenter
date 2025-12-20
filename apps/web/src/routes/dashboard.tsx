@@ -3,6 +3,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { getUser } from "@/functions/get-user";
 import { useTRPC } from "@/utils/trpc";
+import { ComponentExample } from "@/components/component-example";
 
 export const Route = createFileRoute("/dashboard")({
   component: RouteComponent,
@@ -30,6 +31,8 @@ function RouteComponent() {
       <h1>Dashboard</h1>
       <p>Welcome {session?.user.name}</p>
       <p>API: {privateData.data?.message}</p>
+
+      <ComponentExample />
     </div>
   );
 }
