@@ -16,6 +16,7 @@
     "@libsql/client": "^0.15.15",
     "@mukinho/api": "workspace:*",
     "@mukinho/auth": "workspace:*",
+    "@openrouter/ai-sdk-provider": "^1.5.4",
     "@tailwindcss/vite": "^4.1.8",
     "@tanstack/react-form": "^1.23.5",
     "@tanstack/react-query": "^5.90.12",

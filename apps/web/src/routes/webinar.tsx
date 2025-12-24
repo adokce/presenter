@@ -1,10 +1,8 @@
-"use client"
-
-import { useState } from "react"
+import { useState, lazy, Suspense } from "react"
 import { createFileRoute, redirect } from "@tanstack/react-router"
-
-import PDFGallery from "@/components/pdf-gallery"
 import { getUser } from "@/functions/get-user"
+
+const PDFGallery = lazy(() => import("@/components/pdf-gallery"))
 
 export const Route = createFileRoute("/webinar")({
   component: WebinarPage,
@@ -48,13 +46,21 @@ function WebinarPage() {
       </div>
 
       <div className="flex-1 overflow-hidden">
-        <PDFGallery
-          file="/presentation_demo.pdf"
-          pageNumber={pageNumber}
-          onPageChange={setPageNumber}
-          onNumPagesChange={setNumPages}
-          onTextExtracted={setExtractedText}
-        />
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center h-full">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          }
+        >
+          <PDFGallery
+            file="/presentation_demo.pdf"
+            pageNumber={pageNumber}
+            onPageChange={setPageNumber}
+            onNumPagesChange={setNumPages}
+            onTextExtracted={setExtractedText}
+          />
+        </Suspense>
       </div>
     </div>
   )

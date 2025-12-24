@@ -196,3 +196,51 @@ export const invitationRelations = relations(invitation, ({ one }) => ({
     references: [user.id],
   }),
 }));
+
+// Presentation tables
+export const presentation = sqliteTable("presentation", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  pdfUrl: text("pdf_url").notNull(),
+  totalPages: integer("total_pages"),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id").references(() => organization.id, {
+    onDelete: "cascade",
+  }),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+    .notNull(),
+});
+
+export const scriptCache = sqliteTable(
+  "script_cache",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    contentHash: text("content_hash").notNull().unique(),
+    pdfId: text("pdf_id").notNull(),
+    pageNumber: integer("page_number").notNull(),
+    totalPages: integer("total_pages").notNull(),
+    script: text("script").notNull(),
+    audioUrl: text("audio_url"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+      .notNull(),
+  },
+  (table) => [
+    index("script_cache_contentHash_idx").on(table.contentHash),
+    index("script_cache_pdfId_idx").on(table.pdfId),
+  ]
+);
+
+export const presentationRelations = relations(presentation, ({ one }) => ({
+  user: one(user, {
+    fields: [presentation.userId],
+    references: [user.id],
+  }),
+  organization: one(organization, {
+    fields: [presentation.organizationId],
+    references: [organization.id],
+  }),
+}));

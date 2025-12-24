@@ -1,4 +1,13 @@
-import { S3Client, PutObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3"
+import { S3Client, PutObjectCommand, ListObjectsV2Command, GetObjectCommand } from "@aws-sdk/client-s3"
+
+// Debug: Log R2 config (lengths only for security)
+console.log("[R2] Config check:", {
+  accountIdLength: process.env.R2_ACCOUNT_ID?.length,
+  accessKeyIdLength: process.env.R2_ACCESS_KEY_ID?.length,
+  secretAccessKeyLength: process.env.R2_SECRET_ACCESS_KEY?.length,
+  bucket: process.env.R2_BUCKET,
+  publicDevUrl: process.env.R2_PUBLIC_DEV_URL?.substring(0, 40) + "...",
+})
 
 export const r2 = new S3Client({
   region: "auto",
@@ -10,7 +19,7 @@ export const r2 = new S3Client({
 })
 
 export const R2_BUCKET = process.env.R2_BUCKET!
-export const R2_PUBLIC_BASE_URL = process.env.R2_PUBLIC_BASE_URL!
+export const R2_PUBLIC_DEV_URL = process.env.R2_PUBLIC_DEV_URL!
 
 export async function uploadToR2(key: string, body: Buffer | Uint8Array, contentType: string) {
   await r2.send(
@@ -22,7 +31,7 @@ export async function uploadToR2(key: string, body: Buffer | Uint8Array, content
       CacheControl: "public, max-age=31536000, immutable",
     }),
   )
-  return `${R2_PUBLIC_BASE_URL}/${key}`
+  return `${R2_PUBLIC_DEV_URL}/${key}`
 }
 
 export async function listR2Objects(prefix: string) {
@@ -33,4 +42,14 @@ export async function listR2Objects(prefix: string) {
     }),
   )
   return result.Contents || []
+}
+
+export async function getFromR2(key: string) {
+  const result = await r2.send(
+    new GetObjectCommand({
+      Bucket: R2_BUCKET,
+      Key: key,
+    }),
+  )
+  return result
 }

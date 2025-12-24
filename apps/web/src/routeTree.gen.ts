@@ -16,7 +16,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as InviteInvitationIdRouteImport } from './routes/invite/$invitationId'
 import { Route as AdminOrganizationsRouteImport } from './routes/admin/organizations'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api/trpc/$'
+import { Route as ApiGenerateScriptSplatRouteImport } from './routes/api/generate-script/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiAudioSplatRouteImport } from './routes/api/audio/$'
 
 const WebinarRoute = WebinarRouteImport.update({
   id: '/webinar',
@@ -53,9 +55,19 @@ const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
   path: '/api/trpc/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGenerateScriptSplatRoute = ApiGenerateScriptSplatRouteImport.update({
+  id: '/api/generate-script/$',
+  path: '/api/generate-script/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAudioSplatRoute = ApiAudioSplatRouteImport.update({
+  id: '/api/audio/$',
+  path: '/api/audio/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -66,7 +78,9 @@ export interface FileRoutesByFullPath {
   '/webinar': typeof WebinarRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/invite/$invitationId': typeof InviteInvitationIdRoute
+  '/api/audio/$': typeof ApiAudioSplatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/generate-script/$': typeof ApiGenerateScriptSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRoutesByTo {
@@ -76,7 +90,9 @@ export interface FileRoutesByTo {
   '/webinar': typeof WebinarRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/invite/$invitationId': typeof InviteInvitationIdRoute
+  '/api/audio/$': typeof ApiAudioSplatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/generate-script/$': typeof ApiGenerateScriptSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRoutesById {
@@ -87,7 +103,9 @@ export interface FileRoutesById {
   '/webinar': typeof WebinarRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
   '/invite/$invitationId': typeof InviteInvitationIdRoute
+  '/api/audio/$': typeof ApiAudioSplatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/generate-script/$': typeof ApiGenerateScriptSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRouteTypes {
@@ -99,7 +117,9 @@ export interface FileRouteTypes {
     | '/webinar'
     | '/admin/organizations'
     | '/invite/$invitationId'
+    | '/api/audio/$'
     | '/api/auth/$'
+    | '/api/generate-script/$'
     | '/api/trpc/$'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -109,7 +129,9 @@ export interface FileRouteTypes {
     | '/webinar'
     | '/admin/organizations'
     | '/invite/$invitationId'
+    | '/api/audio/$'
     | '/api/auth/$'
+    | '/api/generate-script/$'
     | '/api/trpc/$'
   id:
     | '__root__'
@@ -119,7 +141,9 @@ export interface FileRouteTypes {
     | '/webinar'
     | '/admin/organizations'
     | '/invite/$invitationId'
+    | '/api/audio/$'
     | '/api/auth/$'
+    | '/api/generate-script/$'
     | '/api/trpc/$'
   fileRoutesById: FileRoutesById
 }
@@ -130,7 +154,9 @@ export interface RootRouteChildren {
   WebinarRoute: typeof WebinarRoute
   AdminOrganizationsRoute: typeof AdminOrganizationsRoute
   InviteInvitationIdRoute: typeof InviteInvitationIdRoute
+  ApiAudioSplatRoute: typeof ApiAudioSplatRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiGenerateScriptSplatRoute: typeof ApiGenerateScriptSplatRoute
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
 }
 
@@ -185,11 +211,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTrpcSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/generate-script/$': {
+      id: '/api/generate-script/$'
+      path: '/api/generate-script/$'
+      fullPath: '/api/generate-script/$'
+      preLoaderRoute: typeof ApiGenerateScriptSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
       fullPath: '/api/auth/$'
       preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/audio/$': {
+      id: '/api/audio/$'
+      path: '/api/audio/$'
+      fullPath: '/api/audio/$'
+      preLoaderRoute: typeof ApiAudioSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -202,7 +242,9 @@ const rootRouteChildren: RootRouteChildren = {
   WebinarRoute: WebinarRoute,
   AdminOrganizationsRoute: AdminOrganizationsRoute,
   InviteInvitationIdRoute: InviteInvitationIdRoute,
+  ApiAudioSplatRoute: ApiAudioSplatRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiGenerateScriptSplatRoute: ApiGenerateScriptSplatRoute,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,
 }
 export const routeTree = rootRouteImport
