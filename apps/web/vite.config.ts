@@ -9,4 +9,7 @@ export default defineConfig({
   server: {
     port: 3003,
   },
+  preview: {
+    allowedHosts: ["all"], // Allow all hosts in preview mode (for Coolify deployments)
+  },
 });
