@@ -9,12 +9,6 @@ export default function Header() {
   const isAdmin =
     (session?.user as { role?: string } | undefined)?.role === "admin";
 
-  console.log("🔐 Admin Check:", {
-    isAdmin,
-    userRole: (session?.user as { role?: string } | undefined)?.role,
-    session: session,
-  });
-
   const links = [
     { to: "/", label: "Home" },
     { to: "/dashboard", label: "Dashboard" },
