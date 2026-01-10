@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as InviteInvitationIdRouteImport } from './routes/invite/$invitationId'
 import { Route as AdminOrganizationsRouteImport } from './routes/admin/organizations'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api/trpc/$'
+import { Route as ApiQuizSplatRouteImport } from './routes/api/quiz/$'
 import { Route as ApiGenerateScriptSplatRouteImport } from './routes/api/generate-script/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAudioSplatRouteImport } from './routes/api/audio/$'
@@ -55,6 +56,11 @@ const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
   path: '/api/trpc/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiQuizSplatRoute = ApiQuizSplatRouteImport.update({
+  id: '/api/quiz/$',
+  path: '/api/quiz/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGenerateScriptSplatRoute = ApiGenerateScriptSplatRouteImport.update({
   id: '/api/generate-script/$',
   path: '/api/generate-script/$',
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/api/audio/$': typeof ApiAudioSplatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/generate-script/$': typeof ApiGenerateScriptSplatRoute
+  '/api/quiz/$': typeof ApiQuizSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRoutesByTo {
@@ -93,6 +100,7 @@ export interface FileRoutesByTo {
   '/api/audio/$': typeof ApiAudioSplatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/generate-script/$': typeof ApiGenerateScriptSplatRoute
+  '/api/quiz/$': typeof ApiQuizSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRoutesById {
@@ -106,6 +114,7 @@ export interface FileRoutesById {
   '/api/audio/$': typeof ApiAudioSplatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/generate-script/$': typeof ApiGenerateScriptSplatRoute
+  '/api/quiz/$': typeof ApiQuizSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRouteTypes {
@@ -120,6 +129,7 @@ export interface FileRouteTypes {
     | '/api/audio/$'
     | '/api/auth/$'
     | '/api/generate-script/$'
+    | '/api/quiz/$'
     | '/api/trpc/$'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
     | '/api/audio/$'
     | '/api/auth/$'
     | '/api/generate-script/$'
+    | '/api/quiz/$'
     | '/api/trpc/$'
   id:
     | '__root__'
@@ -144,6 +155,7 @@ export interface FileRouteTypes {
     | '/api/audio/$'
     | '/api/auth/$'
     | '/api/generate-script/$'
+    | '/api/quiz/$'
     | '/api/trpc/$'
   fileRoutesById: FileRoutesById
 }
@@ -157,6 +169,7 @@ export interface RootRouteChildren {
   ApiAudioSplatRoute: typeof ApiAudioSplatRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiGenerateScriptSplatRoute: typeof ApiGenerateScriptSplatRoute
+  ApiQuizSplatRoute: typeof ApiQuizSplatRoute
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
 }
 
@@ -211,6 +224,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTrpcSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/quiz/$': {
+      id: '/api/quiz/$'
+      path: '/api/quiz/$'
+      fullPath: '/api/quiz/$'
+      preLoaderRoute: typeof ApiQuizSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/generate-script/$': {
       id: '/api/generate-script/$'
       path: '/api/generate-script/$'
@@ -245,6 +265,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAudioSplatRoute: ApiAudioSplatRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiGenerateScriptSplatRoute: ApiGenerateScriptSplatRoute,
+  ApiQuizSplatRoute: ApiQuizSplatRoute,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,
 }
 export const routeTree = rootRouteImport

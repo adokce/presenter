@@ -18,8 +18,15 @@ const LLM_MODEL = "nousresearch/hermes-3-llama-3.1-405b:free"
 
 const VOICE_ID = "a9QznHbxnuMJcEJmicSn" // testado voice
 
-function createContentHash(pdfId: string, pageNumber: number, totalPages: number, textContent: string): string {
-  const content = `${pdfId}-${pageNumber}-${totalPages}-${textContent || ""}`
+function createContentHash(
+  pdfId: string, 
+  pageNumber: number, 
+  totalPages: number, 
+  textContent: string,
+  previousText?: string,
+  nextText?: string
+): string {
+  const content = `${pdfId}-${pageNumber}-${totalPages}-${textContent || ""}-${previousText || ""}-${nextText || ""}`
   return crypto.createHash("sha256").update(content).digest("hex")
 }
 
@@ -30,14 +37,16 @@ export const Route = createFileRoute("/api/generate-script/$")({
     console.log("[BACKEND] ========== Generate Script Request Started ==========")
     
     const requestBody = await request.json()
-    const { pdfId, pageNumber, totalPages, textContent } = requestBody
+    const { pdfId, pageNumber, totalPages, textContent, previousText, nextText } = requestBody
     
     console.log("[BACKEND] Request params:", {
       pdfId,
       pageNumber,
       totalPages,
       textContentLength: textContent?.length || 0,
-      textContentPreview: textContent?.substring(0, 100) || "No text content"
+      textContentPreview: textContent?.substring(0, 100) || "No text content",
+      hasPreviousText: !!previousText,
+      hasNextText: !!nextText
     })
 
     try {
@@ -45,7 +54,7 @@ export const Route = createFileRoute("/api/generate-script/$")({
       await initDb()
       console.log("[BACKEND] Database initialized successfully")
 
-      const contentHash = createContentHash(pdfId || "default", pageNumber, totalPages, textContent)
+      const contentHash = createContentHash(pdfId || "default", pageNumber, totalPages, textContent, previousText, nextText)
       console.log("[BACKEND] Content hash generated:", contentHash)
 
       // Check if script is already cached
@@ -69,21 +78,46 @@ export const Route = createFileRoute("/api/generate-script/$")({
 
       console.log("[BACKEND] ❌ Cache MISS. Generating new script...")
 
-      const prompt = `You are a professional presentation speaker for an ISO 9001 Internal Auditors training seminar. Generate a natural, engaging presentation script for this slide.
+      // Build context-aware prompt
+      let contextInfo = ""
+      if (pageNumber === 1) {
+        contextInfo = "This is the FIRST slide - provide a warm welcome and introduce the presentation topic naturally."
+      } else if (pageNumber === totalPages) {
+        contextInfo = "This is the FINAL slide - provide a smooth conclusion that wraps up the presentation."
+      } else {
+        contextInfo = "This is a MIDDLE slide - continue the flow naturally from the previous content without reintroducing the entire presentation."
+      }
 
-Slide ${pageNumber} of ${totalPages}:
-Slide Content: ${textContent || "No text content available"}
+      let previousContext = ""
+      if (previousText && pageNumber > 1) {
+        previousContext = `\n\nPREVIOUS SLIDE CONTENT (for context - what was just discussed):\n${previousText.substring(0, 500)}`
+      }
 
-Create a 30-50 second speaking script that:
-- Sounds natural and conversational (like a real presenter, not just reading the slide)
-- Introduces the topic smoothly based on the slide content
-- Explains key concepts in an engaging and educational way
-- Uses appropriate transitions for the slide number (intro, middle, or conclusion)
-- Maintains a professional training/educational tone
-- IMPORTANT: The content appears to be in Bosnian/Serbian/Croatian - provide the script in the SAME language as the slide content
-- Focus on the main points and make them accessible to the audience
+      let nextContext = ""
+      if (nextText && pageNumber < totalPages) {
+        nextContext = `\n\nNEXT SLIDE PREVIEW (for smooth transition):\n${nextText.substring(0, 300)}`
+      }
 
-Only return the script text, nothing else.`
+      const prompt = `You are a professional presentation speaker for an ISO 9001 Internal Auditors training seminar. Generate a natural, engaging presentation script for slide ${pageNumber} of ${totalPages}.
+
+${contextInfo}
+
+CURRENT SLIDE CONTENT:
+${textContent || "No text content available"}${previousContext}${nextContext}
+
+CRITICAL INSTRUCTIONS:
+- DO NOT start with generic introductions like "Dobro došli" or "Dobar dan" unless this is slide 1
+- DO NOT reintroduce the presentation topic on every slide
+- Create SEAMLESS transitions between slides - reference what was just discussed if context is provided
+- Speak as if you're in the middle of an ongoing presentation, not starting fresh each time
+- Use natural connectors: "Sada ćemo se fokusirati na...", "Prelazimo na...", "Kao što smo vidjeli...", "Nastavimo sa..."
+- Sound conversational and engaging, like a real presenter speaking to an audience
+- Explain key concepts clearly and make them accessible
+- Maintain a professional training/educational tone
+- IMPORTANT: Provide the script in the SAME language as the slide content (Bosnian/Serbian/Croatian)
+- Keep it 30-50 seconds of natural speaking
+
+Return ONLY the script text, nothing else. No meta-commentary, no labels, just the words to be spoken.`
 
       console.log("[BACKEND] Calling OpenRouter LLM with model:", LLM_MODEL)
       console.log("[BACKEND] Prompt length:", prompt.length)
@@ -105,9 +139,10 @@ Only return the script text, nothing else.`
         console.log("[BACKEND] Voice ID:", VOICE_ID)
         
         const result = await experimental_generateSpeech({
-          model: elevenlabs.speech("eleven_turbo_v2_5"),
+          model: elevenlabs.speech("eleven_v3"),
           text: script,
           voice: VOICE_ID,
+          language: "bs",
         })
 
         console.log("[BACKEND] Speech result received")

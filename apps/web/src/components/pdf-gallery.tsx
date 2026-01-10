@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { Document, Page, pdfjs } from "react-pdf"
-import { ChevronLeft, ChevronRight, Volume2, VolumeX, Loader2, Play, Pause } from "lucide-react"
+import { ChevronLeft, ChevronRight, Volume2, Loader2, Play, Pause } from "lucide-react"
 import "react-pdf/dist/Page/AnnotationLayer.css"
 import "react-pdf/dist/Page/TextLayer.css"
 
@@ -13,7 +13,7 @@ interface PDFGalleryProps {
   pageNumber: number
   onPageChange: (page: number) => void
   onNumPagesChange: (numPages: number) => void
-  onTextExtracted: (text: string) => void
+  onTextExtracted: (page: number, text: string) => void
 }
 
 export default function PDFGallery({
@@ -31,8 +31,9 @@ export default function PDFGallery({
   const [audioUrls, setAudioUrls] = useState<Record<number, string>>({})
   const [isLoadingScript, setIsLoadingScript] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
-  const [isMuted, setIsMuted] = useState(false)
+  
   const [currentText, setCurrentText] = useState("")
+  const [extractedTexts, setExtractedTexts] = useState<Record<number, string>>({})
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
@@ -46,6 +47,10 @@ export default function PDFGallery({
 
   // Generate script when page changes and we have text
   useEffect(() => {
+    // Create abort controller for this effect
+    const abortController = new AbortController()
+    let isCancelled = false
+
     const generateScript = async () => {
       console.log("[PDFGallery] generateScript called for page", pageNumber)
       console.log("[PDFGallery] currentText:", currentText?.substring(0, 100))
@@ -54,7 +59,7 @@ export default function PDFGallery({
       // Check if we already have script and audio for this page
       if (scripts[pageNumber] && audioUrls[pageNumber]) {
         console.log("[PDFGallery] Using cached script and audio")
-        if (!isMuted) {
+        if (!isCancelled) {
           playAudio(audioUrls[pageNumber])
         }
         return
@@ -70,6 +75,15 @@ export default function PDFGallery({
       console.log("[PDFGallery] Calling /api/generate-script/...")
 
       try {
+        // Get previous and next slide text for context
+        const previousText = pageNumber > 1 ? extractedTexts[pageNumber - 1] : undefined
+        const nextText = pageNumber < numPages ? extractedTexts[pageNumber + 1] : undefined
+
+        console.log("[PDFGallery] Context available:", {
+          hasPrevious: !!previousText,
+          hasNext: !!nextText
+        })
+
         const response = await fetch("/api/generate-script/", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -78,8 +92,17 @@ export default function PDFGallery({
             pageNumber: pageNumber,
             totalPages: numPages,
             textContent: currentText,
+            previousText,
+            nextText,
           }),
+          signal: abortController.signal, // Add abort signal
         })
+
+        // Check if effect was cancelled while we were fetching
+        if (isCancelled) {
+          console.log("[PDFGallery] Request completed but effect was cancelled")
+          return
+        }
 
         console.log("[PDFGallery] Response status:", response.status)
         const data = await response.json()
@@ -92,7 +115,8 @@ export default function PDFGallery({
           if (data.audioUrl) {
             console.log("[PDFGallery] Audio URL received:", data.audioUrl)
             setAudioUrls((prev) => ({ ...prev, [pageNumber]: data.audioUrl }))
-            if (!isMuted) {
+            // Only play if not cancelled
+            if (!isCancelled) {
               playAudio(data.audioUrl)
             }
           }
@@ -100,16 +124,29 @@ export default function PDFGallery({
           console.error("[PDFGallery] No script in response:", data)
         }
       } catch (error) {
+        // Don't log abort errors - they're expected
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.log("[PDFGallery] Request aborted for page", pageNumber)
+          return
+        }
         console.error("[PDFGallery] Error generating script:", error)
       } finally {
-        setIsLoadingScript(false)
+        if (!isCancelled) {
+          setIsLoadingScript(false)
+        }
       }
     }
 
     if (numPages > 0 && currentText) {
       generateScript()
     }
-  }, [pageNumber, currentText, numPages, isMuted])
+
+    // Cleanup function - runs when pageNumber changes or component unmounts
+    return () => {
+      isCancelled = true
+      abortController.abort()
+    }
+  }, [pageNumber, currentText, numPages, extractedTexts])
 
   const playAudio = (url: string) => {
     console.log("[PDFGallery] playAudio called with:", url)
@@ -137,17 +174,7 @@ export default function PDFGallery({
     audio.play().catch((err) => console.error("[PDFGallery] Audio play error:", err))
   }
 
-  const toggleMute = () => {
-    if (!isMuted) {
-      if (audioRef.current) {
-        audioRef.current.pause()
-      }
-      setIsSpeaking(false)
-    } else if (audioUrls[pageNumber]) {
-      playAudio(audioUrls[pageNumber])
-    }
-    setIsMuted(!isMuted)
-  }
+  
 
   const togglePlayPause = () => {
     if (audioRef.current) {
@@ -194,7 +221,29 @@ export default function PDFGallery({
       const text = textContent.items.map((item: any) => item.str).join(" ")
       console.log("[PDFGallery] Extracted text:", text.substring(0, 100))
       setCurrentText(text)
-      onTextExtracted(text)
+      setExtractedTexts(prev => ({ ...prev, [pageNumber]: text }))
+      onTextExtracted(pageNumber, text)
+
+      // Pre-extract adjacent slides for context
+      const adjacentPages = []
+      if (pageNumber > 1 && !extractedTexts[pageNumber - 1]) {
+        adjacentPages.push(pageNumber - 1)
+      }
+      if (pageNumber < numPages && !extractedTexts[pageNumber + 1]) {
+        adjacentPages.push(pageNumber + 1)
+      }
+
+      for (const adjacentPage of adjacentPages) {
+        try {
+          const adjPage = await pdf.getPage(adjacentPage)
+          const adjTextContent = await adjPage.getTextContent()
+          const adjText = adjTextContent.items.map((item: any) => item.str).join(" ")
+          setExtractedTexts(prev => ({ ...prev, [adjacentPage]: adjText }))
+          console.log(`[PDFGallery] Pre-extracted text for page ${adjacentPage}`)
+        } catch (error) {
+          console.error(`[PDFGallery] Error pre-extracting page ${adjacentPage}:`, error)
+        }
+      }
     } catch (error) {
       console.error("[PDFGallery] Error extracting text:", error)
     }
@@ -206,7 +255,7 @@ export default function PDFGallery({
       <div className="flex-1 flex flex-col">
         <div className="flex-1 flex justify-center items-center bg-muted/30 p-4 overflow-auto relative">
           {/* Speaking indicator */}
-          {isSpeaking && !isMuted && (
+          {isSpeaking && (
             <div className="absolute top-4 right-4 z-10 flex items-center gap-2 bg-primary/20 px-3 py-1.5 rounded-full border border-primary/30">
               <Volume2 className="h-4 w-4 text-primary" />
               <div className="flex items-center gap-1">
@@ -271,13 +320,13 @@ export default function PDFGallery({
                 >
                   {isSpeaking ? <Pause size={18} /> : <Play size={18} />}
                 </button>
-                <button
+                {/* <button
                   onClick={toggleMute}
                   className={`p-2 rounded-lg transition-colors ${isMuted ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"}`}
                   title={isMuted ? "Unmute" : "Mute"}
                 >
                   {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-                </button>
+                </button> */}
               </div>
 
               {/* Page navigation */}
@@ -333,7 +382,7 @@ export default function PDFGallery({
             <div className="space-y-4">
               <p className="text-sm leading-relaxed">{scripts[pageNumber]}</p>
               <div className="pt-3 border-t text-xs text-muted-foreground">
-                {isMuted ? "Voice is muted" : isSpeaking ? "Speaking..." : "Click play to hear"}
+                {isSpeaking ? "Speaking..." : "Click play to hear"}
               </div>
             </div>
           ) : (
