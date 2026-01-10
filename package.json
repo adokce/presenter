@@ -35,9 +35,9 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "turbo": "^2.6.3",
-    "typescript": "catalog:",
-    "@types/node": "^22.13.11"
+    "@types/node": "^22.13.11",
+    "turbo": "^2.7.3",
+    "typescript": "catalog:"
   },
   "packageManager": "bun@1.3.4"
 }

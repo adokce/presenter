@@ -4,7 +4,6 @@ import { experimental_generateSpeech } from "ai"
 import { elevenlabs } from "@ai-sdk/elevenlabs"
 import { db, initDb } from "@/lib/db"
 import { uploadToR2 } from "@/lib/r2"
-import crypto from "crypto"
 import { createOpenRouter } from "@openrouter/ai-sdk-provider"
 
 const openrouter = createOpenRouter({
@@ -27,7 +26,7 @@ function createContentHash(
   nextText?: string
 ): string {
   const content = `${pdfId}-${pageNumber}-${totalPages}-${textContent || ""}-${previousText || ""}-${nextText || ""}`
-  return crypto.createHash("sha256").update(content).digest("hex")
+  return new Bun.CryptoHasher("sha256").update(content).digest("hex")
 }
 
 export const Route = createFileRoute("/api/generate-script/$")({
