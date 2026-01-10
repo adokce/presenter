@@ -1,22 +1,14 @@
 import { z } from "zod";
-import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { adminProcedure, publicProcedure, router } from "../index";
-import { db } from "@mukinho/db";
-import * as schema from "@mukinho/db/schema/auth";
+import { organizationRepository } from "@mukinho/db/repositories";
 
 export const organizationRouter = router({
   // Get invitation details (public - for invite link page)
   getInvitation: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
-      const invite = await db.query.invitation.findFirst({
-        where: eq(schema.invitation.id, input.id),
-        with: {
-          organization: true,
-          inviter: true,
-        },
-      });
+      const invite = await organizationRepository.findInvitationById(input.id);
 
       if (!invite) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Invitation not found" });
@@ -42,37 +34,17 @@ export const organizationRouter = router({
 
   // List all organizations (admin only)
   list: adminProcedure.query(async () => {
-    const organizations = await db.query.organization.findMany({
-      with: {
-        members: {
-          with: {
-            user: true,
-          },
-        },
-        invitations: true,
-      },
-    });
-    return organizations;
+    return organizationRepository.findAllOrganizations();
   }),
 
   // Get a single organization by ID
   getById: adminProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
-      const org = await db.query.organization.findFirst({
-        where: eq(schema.organization.id, input.id),
-        with: {
-          members: {
-            with: {
-              user: true,
-            },
-          },
-          invitations: true,
-        },
-      });
+      const org = await organizationRepository.findOrganizationById(input.id);
 
       if (!org) {
-        throw new Error("Organization not found");
+        throw new TRPCError({ code: "NOT_FOUND", message: "Organization not found" });
       }
 
       return org;
@@ -96,14 +68,14 @@ export const organizationRouter = router({
           .replace(/(^-|-$)/g, "");
 
       // Create the organization
-      await db.insert(schema.organization).values({
+      await organizationRepository.createOrganization({
         id,
         name: input.name,
         slug,
       });
 
       // Add admin as owner of the organization
-      await db.insert(schema.member).values({
+      await organizationRepository.createMember({
         id: crypto.randomUUID(),
         organizationId: id,
         userId: ctx.session.user.id,
@@ -124,18 +96,16 @@ export const organizationRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       // Verify organization exists
-      const org = await db.query.organization.findFirst({
-        where: eq(schema.organization.id, input.organizationId),
-      });
+      const org = await organizationRepository.findOrganizationById(input.organizationId);
 
       if (!org) {
-        throw new Error("Organization not found");
+        throw new TRPCError({ code: "NOT_FOUND", message: "Organization not found" });
       }
 
       const id = crypto.randomUUID();
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-      await db.insert(schema.invitation).values({
+      await organizationRepository.createInvitation({
         id,
         organizationId: input.organizationId,
         email: input.email,
@@ -163,25 +133,14 @@ export const organizationRouter = router({
   listInvitations: adminProcedure
     .input(z.object({ organizationId: z.string() }))
     .query(async ({ input }) => {
-      const invitations = await db.query.invitation.findMany({
-        where: eq(schema.invitation.organizationId, input.organizationId),
-        with: {
-          inviter: true,
-          organization: true,
-        },
-      });
-      return invitations;
+      return organizationRepository.findInvitationsByOrganizationId(input.organizationId);
     }),
 
   // Cancel an invitation
   cancelInvitation: adminProcedure
     .input(z.object({ invitationId: z.string() }))
     .mutation(async ({ input }) => {
-      await db
-        .update(schema.invitation)
-        .set({ status: "canceled" })
-        .where(eq(schema.invitation.id, input.invitationId));
-
+      await organizationRepository.updateInvitationStatus(input.invitationId, "canceled");
       return { success: true };
     }),
 
@@ -189,10 +148,7 @@ export const organizationRouter = router({
   delete: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
-      await db
-        .delete(schema.organization)
-        .where(eq(schema.organization.id, input.id));
-
+      await organizationRepository.deleteOrganization(input.id);
       return { success: true };
     }),
 });
