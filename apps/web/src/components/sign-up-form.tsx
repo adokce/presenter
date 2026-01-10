@@ -10,7 +10,17 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
-export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () => void }) {
+interface SignUpFormProps {
+  onSwitchToSignIn: () => void;
+  inviteEmail?: string;
+  inviteId?: string;
+}
+
+export default function SignUpForm({
+  onSwitchToSignIn,
+  inviteEmail,
+  inviteId,
+}: SignUpFormProps) {
   const navigate = useNavigate({
     from: "/",
   });
@@ -18,7 +28,7 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
 
   const form = useForm({
     defaultValues: {
-      email: "",
+      email: inviteEmail || "",
       password: "",
       name: "",
     },
@@ -57,7 +67,14 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
 
   return (
     <div className="mx-auto w-full mt-10 max-w-md p-6">
-      <h1 className="mb-6 text-center text-3xl font-bold">Create Account</h1>
+      <h1 className="mb-6 text-center text-3xl font-bold">
+        {inviteId ? "Join Organization" : "Create Account"}
+      </h1>
+      {inviteEmail && (
+        <p className="mb-4 text-center text-sm text-muted-foreground">
+          Complete your registration to accept the invitation
+        </p>
+      )}
 
       <form
         onSubmit={(e) => {
@@ -101,6 +118,8 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
+                  readOnly={!!inviteEmail}
+                  className={inviteEmail ? "bg-muted" : ""}
                 />
                 {field.state.meta.errors.map((error) => (
                   <p key={error?.message} className="text-red-500">
