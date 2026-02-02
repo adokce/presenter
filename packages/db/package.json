@@ -1,37 +1,37 @@
 {
-  "name": "@mukinho/db",
-  "type": "module",
-  "exports": {
-    ".": {
-      "default": "./src/index.ts"
+    "name": "@mukinho/db",
+    "type": "module",
+    "exports": {
+        ".": {
+            "default": "./src/index.ts"
+        },
+        "./schema": {
+            "default": "./src/schema/index.ts"
+        },
+        "./schema/auth": {
+            "default": "./src/schema/auth.ts"
+        },
+        "./repositories": {
+            "default": "./src/repositories/index.ts"
+        }
     },
-    "./schema": {
-      "default": "./src/schema/index.ts"
+    "scripts": {
+        "db:local": "turso dev --db-file local.db",
+        "db:push": "drizzle-kit push",
+        "db:generate": "drizzle-kit generate",
+        "db:studio": "drizzle-kit studio --host 0.0.0.0 --port 3013",
+        "db:migrate": "drizzle-kit migrate"
     },
-    "./schema/auth": {
-      "default": "./src/schema/auth.ts"
+    "devDependencies": {
+        "@mukinho/config": "workspace:*",
+        "drizzle-kit": "^0.31.8",
+        "typescript": "catalog:"
     },
-    "./repositories": {
-      "default": "./src/repositories/index.ts"
+    "dependencies": {
+        "@libsql/client": "catalog:",
+        "dotenv": "catalog:",
+        "drizzle-orm": "^0.45.1",
+        "libsql": "catalog:",
+        "zod": "catalog:"
     }
-  },
-  "scripts": {
-    "db:local": "turso dev --db-file local.db",
-    "db:push": "drizzle-kit push",
-    "db:generate": "drizzle-kit generate",
-    "db:studio": "drizzle-kit studio",
-    "db:migrate": "drizzle-kit migrate"
-  },
-  "devDependencies": {
-    "drizzle-kit": "^0.31.8",
-    "typescript": "catalog:",
-    "@mukinho/config": "workspace:*"
-  },
-  "dependencies": {
-    "drizzle-orm": "^0.45.1",
-    "@libsql/client": "catalog:",
-    "libsql": "catalog:",
-    "dotenv": "catalog:",
-    "zod": "catalog:"
-  }
 }

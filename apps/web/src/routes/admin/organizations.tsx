@@ -13,6 +13,48 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+function copyToClipboard(
+  text: string,
+  onSuccess: () => void,
+  onFallback: () => void
+) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(onSuccess).catch(() => {
+      fallbackCopyToClipboard(text, onSuccess, onFallback);
+    });
+  } else {
+    fallbackCopyToClipboard(text, onSuccess, onFallback);
+  }
+}
+
+function fallbackCopyToClipboard(
+  text: string,
+  onSuccess: () => void,
+  onFallback: () => void
+) {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.style.position = "fixed";
+  textArea.style.left = "-9999px";
+  textArea.style.top = "0";
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+
+  try {
+    const successful = document.execCommand("copy");
+    document.body.removeChild(textArea);
+    if (successful) {
+      onSuccess();
+    } else {
+      onFallback();
+    }
+  } catch (err) {
+    document.body.removeChild(textArea);
+    onFallback();
+  }
+}
+
 import { getUser } from "@/functions/get-user";
 import { useTRPC } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
@@ -70,6 +112,7 @@ export const Route = createFileRoute("/admin/organizations")({
 function OrganizationsPage() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const [manualCopyUrl, setManualCopyUrl] = useState<string | null>(null);
 
   const organizations = useQuery(trpc.organization.list.queryOptions());
 
@@ -108,10 +151,7 @@ function OrganizationsPage() {
           queryKey: trpc.organization.list.queryKey(),
         });
         const fullLink = `${window.location.origin}${data.inviteLink}`;
-        navigator.clipboard.writeText(fullLink);
-        toast.success("Invite link copied to clipboard!", {
-          description: fullLink,
-        });
+        copyToClipboard(fullLink, () => toast.success("Invite link copied to clipboard!"), () => setManualCopyUrl(fullLink));
       },
       onError: (error) => {
         toast.error(error.message);
@@ -181,12 +221,53 @@ function OrganizationsPage() {
               onCancelInvite={(invitationId) =>
                 cancelInviteMutation.mutate({ invitationId })
               }
+              onCopyFallback={(url) => setManualCopyUrl(url)}
               isDeleting={deleteOrgMutation.isPending}
               isCreatingInvite={createInviteMutation.isPending}
             />
           ))}
         </div>
       )}
+
+      <Dialog open={!!manualCopyUrl} onOpenChange={() => setManualCopyUrl(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Copy Invite Link</DialogTitle>
+            <DialogDescription>
+              Clipboard access is not available. Please copy the link below manually or try the Copy button.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 flex gap-2">
+            <Input
+              value={manualCopyUrl || ""}
+              readOnly
+              className="w-full"
+              onFocus={(e) => e.target.select()}
+            />
+            <Button
+              variant="secondary"
+              onClick={() => {
+                if (manualCopyUrl) {
+                  copyToClipboard(
+                    manualCopyUrl,
+                    () => {
+                      toast.success("Copied to clipboard!");
+                      setManualCopyUrl(null);
+                    },
+                    () => toast.error("Copy failed. Please select and copy manually.")
+                  );
+                }
+              }}
+            >
+              <Copy className="h-4 w-4 mr-1" />
+              Copy
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setManualCopyUrl(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -277,6 +358,7 @@ function OrganizationCard({
   onDelete,
   onCreateInvite,
   onCancelInvite,
+  onCopyFallback,
   isDeleting,
   isCreatingInvite,
 }: {
@@ -284,6 +366,7 @@ function OrganizationCard({
   onDelete: () => void;
   onCreateInvite: (email: string, role: "member" | "admin") => void;
   onCancelInvite: (invitationId: string) => void;
+  onCopyFallback: (url: string) => void;
   isDeleting: boolean;
   isCreatingInvite: boolean;
 }) {
@@ -462,8 +545,7 @@ function OrganizationCard({
                           variant="ghost"
                           onClick={() => {
                             const link = `${window.location.origin}/invite/${invite.id}`;
-                            navigator.clipboard.writeText(link);
-                            toast.success("Link copied!");
+                            copyToClipboard(link, () => toast.success("Link copied!"), () => onCopyFallback(link));
                           }}
                           title="Copy invite link"
                         >
