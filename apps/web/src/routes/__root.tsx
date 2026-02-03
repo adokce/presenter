@@ -9,6 +9,8 @@ import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanst
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
 import { Toaster } from "@/components/ui/sonner";
+import { m } from "@/paraglide/messages";
+import { getLocale } from "@/paraglide/runtime";
 
 import Header from "../components/header";
 import appCss from "../index.css?url";
@@ -28,7 +30,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "My App",
+        title: m.app_title(),
       },
     ],
     links: [
@@ -50,7 +52,7 @@ function RootDocument() {
   }, []);
 
   return (
-    <html lang="en" className="dark">
+    <html lang={getLocale()} className="dark">
       <head>
         <HeadContent />
       </head>

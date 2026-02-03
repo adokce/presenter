@@ -11,13 +11,15 @@ import { toast } from "sonner";
 import Loader from "./components/loader";
 import { routeTree } from "./routeTree.gen";
 import { TRPCProvider } from "./utils/trpc";
+import { m } from "@/paraglide/messages";
+import { deLocalizeUrl, localizeUrl } from "@/paraglide/runtime";
 
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error, query) => {
       toast.error(error.message, {
         action: {
-          label: "retry",
+          label: m.retry_action(),
           onClick: query.invalidate,
         },
       });
@@ -52,7 +54,11 @@ export const getRouter = () => {
     defaultPreloadStaleTime: 0,
     context: { trpc, queryClient },
     defaultPendingComponent: () => <Loader />,
-    defaultNotFoundComponent: () => <div>Not Found</div>,
+    defaultNotFoundComponent: () => <div>{m.not_found()}</div>,
+    rewrite: {
+      input: ({ url }) => deLocalizeUrl(url).toString(),
+      output: ({ url }) => localizeUrl(url).toString(),
+    },
     Wrap: ({ children }) => (
       <QueryClientProvider client={queryClient}>
         <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>

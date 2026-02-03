@@ -3,12 +3,13 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ChevronLeftIcon, ChevronRightIcon, MoreHorizontalIcon } from "lucide-react"
+import { m } from "@/paraglide/messages"
 
 function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
   return (
     <nav
       role="navigation"
-      aria-label="pagination"
+      aria-label={m.pagination_label()}
       data-slot="pagination"
       className={cn(
         "mx-auto flex w-full justify-center",
@@ -71,14 +72,14 @@ function PaginationPrevious({
 }: React.ComponentProps<typeof PaginationLink>) {
   return (
     <PaginationLink
-      aria-label="Go to previous page"
+      aria-label={m.go_to_previous_page()}
       size="default"
       className={cn("pl-1.5!", className)}
       {...props}
     >
       <ChevronLeftIcon data-icon="inline-start" />
       <span className="hidden sm:block">
-        Previous
+        {m.previous()}
       </span>
     </PaginationLink>
   )
@@ -90,12 +91,12 @@ function PaginationNext({
 }: React.ComponentProps<typeof PaginationLink>) {
   return (
     <PaginationLink
-      aria-label="Go to next page"
+      aria-label={m.go_to_next_page()}
       size="default"
       className={cn("pr-1.5!", className)}
       {...props}
     >
-      <span className="hidden sm:block">Next</span>
+      <span className="hidden sm:block">{m.next()}</span>
       <ChevronRightIcon data-icon="inline-end" />
     </PaginationLink>
   )
@@ -117,7 +118,7 @@ function PaginationEllipsis({
     >
       <MoreHorizontalIcon
       />
-      <span className="sr-only">More pages</span>
+      <span className="sr-only">{m.more_pages()}</span>
     </span>
   )
 }

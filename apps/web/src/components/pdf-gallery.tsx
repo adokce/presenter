@@ -5,6 +5,7 @@ import { Document, Page, pdfjs } from "react-pdf"
 import { ChevronLeft, ChevronRight, Volume2, Loader2, Play, Pause } from "lucide-react"
 import "react-pdf/dist/Page/AnnotationLayer.css"
 import "react-pdf/dist/Page/TextLayer.css"
+import { m } from "@/paraglide/messages"
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
 
@@ -276,8 +277,8 @@ export default function PDFGallery({
             }
             error={
               <div className="text-center py-20">
-                <p className="text-destructive text-lg font-medium">Failed to load PDF</p>
-                <p className="text-muted-foreground mt-2">Please check if the file exists</p>
+                <p className="text-destructive text-lg font-medium">{m.pdf_load_failed_title()}</p>
+                <p className="text-muted-foreground mt-2">{m.pdf_load_failed_hint()}</p>
               </div>
             }
           >
@@ -306,7 +307,7 @@ export default function PDFGallery({
                        transition-colors duration-200"
             >
               <ChevronLeft size={20} />
-              Previous
+              {m.previous()}
             </button>
 
             <div className="flex items-center gap-4">
@@ -316,7 +317,7 @@ export default function PDFGallery({
                   onClick={togglePlayPause}
                   disabled={!audioUrls[pageNumber] && !isLoadingScript}
                   className="p-2 rounded-lg bg-muted hover:bg-muted/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  title={isSpeaking ? "Pause" : "Play"}
+                  title={isSpeaking ? m.pause() : m.play()}
                 >
                   {isSpeaking ? <Pause size={18} /> : <Play size={18} />}
                 </button>
@@ -358,7 +359,7 @@ export default function PDFGallery({
                        hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed
                        transition-colors duration-200"
             >
-              Next
+              {m.next()}
               <ChevronRight size={20} />
             </button>
           </div>
@@ -369,25 +370,25 @@ export default function PDFGallery({
       <div className="w-80 border-l bg-muted/20 flex flex-col">
         <div className="p-4 border-b">
           <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">
-            AI Speaker Script
+            {m.ai_speaker_script()}
           </h3>
         </div>
         <div className="flex-1 p-4 overflow-auto">
           {isLoadingScript ? (
             <div className="flex items-center gap-3 text-muted-foreground">
               <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              <span>Generating script...</span>
+              <span>{m.generating_script()}</span>
             </div>
           ) : scripts[pageNumber] ? (
             <div className="space-y-4">
               <p className="text-sm leading-relaxed">{scripts[pageNumber]}</p>
               <div className="pt-3 border-t text-xs text-muted-foreground">
-                {isSpeaking ? "Speaking..." : "Click play to hear"}
+                {isSpeaking ? m.speaking() : m.click_play_to_hear()}
               </div>
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Script will be generated when the slide loads...
+              {m.script_generated_on_load()}
             </p>
           )}
         </div>

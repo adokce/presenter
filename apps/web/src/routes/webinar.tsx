@@ -9,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { Loader2 } from "lucide-react"
+import { m } from "@/paraglide/messages"
 
 const PDFGallery = lazy(() => import("@/components/pdf-gallery"))
 
@@ -169,11 +170,11 @@ function WebinarPage() {
 
     let feedback = ""
     if (score === 100) {
-      feedback = "Perfect! You got all questions correct. Excellent understanding of the material."
+      feedback = m.feedback_perfect()
     } else if (passed) {
-      feedback = `Good job! You got ${correctCount} out of ${totalQuestions} correct. Keep up the great work.`
+      feedback = m.feedback_passed({ correct: correctCount, total: totalQuestions })
     } else {
-      feedback = `You got ${correctCount} out of ${totalQuestions} correct. Review the slides and try again to reinforce your understanding.`
+      feedback = m.feedback_failed({ correct: correctCount, total: totalQuestions })
     }
 
     const result = { passed, feedback, score }
@@ -196,15 +197,15 @@ function WebinarPage() {
       <div className="border-b px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Webinar</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{m.webinar_title()}</h1>
             <p className="text-muted-foreground mt-1">
-              Welcome, {session?.user.name}
+              {m.welcome_user({ name: session?.user.name ?? "" })}
             </p>
           </div>
           <div className="text-sm text-muted-foreground">
             {numPages > 0 && (
               <span>
-                Slide {pageNumber} of {numPages}
+                {m.slide_counter({ current: pageNumber, total: numPages })}
               </span>
             )}
           </div>
@@ -235,9 +236,9 @@ function WebinarPage() {
       {Object.keys(completedQuizzes).length > 0 && (
         <div className="border-t bg-muted/30 px-6 py-4">
           <div className="flex items-center gap-2 mb-3">
-            <Badge variant="outline">Completed Quizzes</Badge>
+            <Badge variant="outline">{m.completed_quizzes()}</Badge>
             <p className="text-sm text-muted-foreground">
-              Your quiz results from this session
+              {m.quiz_results_session()}
             </p>
           </div>
           <div className="space-y-2">
@@ -249,9 +250,11 @@ function WebinarPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Badge variant="secondary" className="text-xs">
-                        Slides {pages[0]}–{pages[pages.length - 1]}
+                        {m.slides_range({ start: pages[0], end: pages[pages.length - 1] })}
                       </Badge>
-                      <span className="text-sm font-medium">Score: {result.score}%</span>
+                      <span className="text-sm font-medium">
+                        {m.score_label({ score: result.score })}
+                      </span>
                     </div>
                     <Badge
                       className={cn(
@@ -261,7 +264,7 @@ function WebinarPage() {
                           : "bg-amber-500 text-amber-900"
                       )}
                     >
-                      {result.passed ? "Passed" : "Keep Practicing"}
+                      {result.passed ? m.passed() : m.keep_practicing()}
                     </Badge>
                   </div>
                 </Card>
@@ -276,17 +279,24 @@ function WebinarPage() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {quiz ? `Slides ${quizChunkPages[0]}–${quizChunkPages[quizChunkPages.length - 1]} Quiz` : "Loading Quiz..."}
+              {quiz
+                ? m.quiz_title_range({
+                    start: quizChunkPages[0],
+                    end: quizChunkPages[quizChunkPages.length - 1],
+                  })
+                : m.loading_quiz()}
             </DialogTitle>
             <DialogDescription>
-              Complete this short quiz to continue. Your results are informational only.
+              {m.quiz_description()}
             </DialogDescription>
           </DialogHeader>
 
           {isFetchingQuiz && !quiz ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <span className="ml-3 text-muted-foreground">Generating quiz questions...</span>
+              <span className="ml-3 text-muted-foreground">
+                {m.generating_quiz_questions()}
+              </span>
             </div>
           ) : quiz ? (
             <div className="space-y-6 py-4">
@@ -340,7 +350,7 @@ function WebinarPage() {
                 <div className="rounded-lg border bg-muted/50 p-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold">
-                      Score: {quizResult.score}%
+                      {m.score_label({ score: quizResult.score })}
                     </p>
                     <Badge
                       className={cn(
@@ -349,7 +359,7 @@ function WebinarPage() {
                           : "bg-amber-500 text-amber-900"
                       )}
                     >
-                      {quizResult.passed ? "Passed" : "Keep Practicing"}
+                      {quizResult.passed ? m.passed() : m.keep_practicing()}
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">{quizResult.feedback}</p>
@@ -366,12 +376,12 @@ function WebinarPage() {
                   }}
                   disabled={isFetchingQuiz || !quizResult}
                 >
-                  Retry Quiz
+                  {m.retry_quiz()}
                 </Button>
                 {quizResult ? (
-                  <Button onClick={closeQuizModal}>Continue to Next Slides</Button>
+                  <Button onClick={closeQuizModal}>{m.continue_to_next_slides()}</Button>
                 ) : (
-                  <Button onClick={submitQuiz}>Submit Quiz</Button>
+                  <Button onClick={submitQuiz}>{m.submit_quiz()}</Button>
                 )}
               </div>
             </div>
@@ -381,4 +391,3 @@ function WebinarPage() {
     </div>
   )
 }
-

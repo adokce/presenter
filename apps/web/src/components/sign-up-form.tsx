@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import z from "zod";
 
 import { authClient } from "@/lib/auth-client";
+import { m } from "@/paraglide/messages";
 
 import Loader from "./loader";
 import { Button } from "./ui/button";
@@ -44,7 +45,7 @@ export default function SignUpForm({
             navigate({
               to: "/webinar",
             });
-            toast.success("Sign up successful");
+            toast.success(m.sign_up_success());
           },
           onError: (error) => {
             toast.error(error.error.message || error.error.statusText);
@@ -54,9 +55,9 @@ export default function SignUpForm({
     },
     validators: {
       onSubmit: z.object({
-        name: z.string().min(2, "Name must be at least 2 characters"),
-        email: z.email("Invalid email address"),
-        password: z.string().min(8, "Password must be at least 8 characters"),
+        name: z.string().min(2, m.name_min_2()),
+        email: z.email(m.invalid_email()),
+        password: z.string().min(8, m.password_min_8()),
       }),
     },
   });
@@ -68,11 +69,11 @@ export default function SignUpForm({
   return (
     <div className="mx-auto w-full mt-10 max-w-md p-6">
       <h1 className="mb-6 text-center text-3xl font-bold">
-        {inviteId ? "Join Organization" : "Create Account"}
+        {inviteId ? m.join_organization() : m.create_account()}
       </h1>
       {inviteEmail && (
         <p className="mb-4 text-center text-sm text-muted-foreground">
-          Complete your registration to accept the invitation
+          {m.complete_registration()}
         </p>
       )}
 
@@ -88,7 +89,7 @@ export default function SignUpForm({
           <form.Field name="name">
             {(field) => (
               <div className="space-y-2">
-                <Label htmlFor={field.name}>Name</Label>
+                <Label htmlFor={field.name}>{m.name_label()}</Label>
                 <Input
                   id={field.name}
                   name={field.name}
@@ -110,7 +111,7 @@ export default function SignUpForm({
           <form.Field name="email">
             {(field) => (
               <div className="space-y-2">
-                <Label htmlFor={field.name}>Email</Label>
+                <Label htmlFor={field.name}>{m.email_label()}</Label>
                 <Input
                   id={field.name}
                   name={field.name}
@@ -135,7 +136,7 @@ export default function SignUpForm({
           <form.Field name="password">
             {(field) => (
               <div className="space-y-2">
-                <Label htmlFor={field.name}>Password</Label>
+                <Label htmlFor={field.name}>{m.password_label()}</Label>
                 <Input
                   id={field.name}
                   name={field.name}
@@ -161,7 +162,7 @@ export default function SignUpForm({
               className="w-full"
               disabled={!state.canSubmit || state.isSubmitting}
             >
-              {state.isSubmitting ? "Submitting..." : "Sign Up"}
+              {state.isSubmitting ? m.submitting() : m.sign_up_button()}
             </Button>
           )}
         </form.Subscribe>
@@ -173,7 +174,7 @@ export default function SignUpForm({
           onClick={onSwitchToSignIn}
           className="text-indigo-600 hover:text-indigo-800"
         >
-          Already have an account? Sign In
+          {m.already_have_account_sign_in()}
         </Button>
       </div>
     </div>

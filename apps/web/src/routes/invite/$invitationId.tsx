@@ -13,6 +13,7 @@ import {
 import { buttonVariants } from "@/components/ui/button";
 import Loader from "@/components/loader";
 import { cn } from "@/lib/utils";
+import { m } from "@/paraglide/messages";
 
 export const Route = createFileRoute("/invite/$invitationId")({
   component: InvitePage,
@@ -42,7 +43,7 @@ function InvitePage() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
               <AlertCircle className="h-6 w-6 text-destructive" />
             </div>
-            <CardTitle className="text-destructive">Invalid Invitation</CardTitle>
+            <CardTitle className="text-destructive">{m.invalid_invitation()}</CardTitle>
             <CardDescription>{invitation.error.message}</CardDescription>
           </CardHeader>
           <CardContent>
@@ -50,7 +51,7 @@ function InvitePage() {
               to="/"
               className={cn(buttonVariants({ variant: "outline" }), "w-full")}
             >
-              Go to Home
+              {m.go_to_home()}
             </Link>
           </CardContent>
         </Card>
@@ -59,6 +60,12 @@ function InvitePage() {
   }
 
   const data = invitation.data!;
+  const roleLabel =
+    data.role === "admin"
+      ? m.role_admin()
+      : data.role === "owner"
+        ? m.role_owner()
+        : m.role_member();
 
   return (
     <div className="flex items-center justify-center min-h-[60vh] p-4">
@@ -67,18 +74,18 @@ function InvitePage() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <Building2 className="h-6 w-6 text-primary" />
           </div>
-          <CardTitle>You're invited to join</CardTitle>
+          <CardTitle>{m.invited_to_join()}</CardTitle>
           <CardDescription className="text-lg font-semibold text-foreground">
             {data.organizationName}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-center text-muted-foreground">
-            {data.inviterName} has invited you to join as a{" "}
-            <strong>{data.role || "member"}</strong>.
+            {m.invited_as_role_prefix({ inviter: data.inviterName })}{" "}
+            <strong>{roleLabel}</strong>.
           </p>
           <p className="text-center text-sm text-muted-foreground">
-            This invitation was sent to <strong>{data.email}</strong>
+            {m.invitation_sent_to({ email: data.email })}
           </p>
           <Link
             to="/login"
@@ -86,7 +93,7 @@ function InvitePage() {
             className={cn(buttonVariants(), "w-full")}
           >
             <UserPlus className="mr-2 h-4 w-4" />
-            Sign Up to Join
+            {m.sign_up_to_join()}
           </Link>
         </CardContent>
       </Card>

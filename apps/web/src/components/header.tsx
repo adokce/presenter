@@ -3,6 +3,7 @@ import { Building2 } from "lucide-react";
 
 import UserMenu from "./user-menu";
 import { authClient } from "@/lib/auth-client";
+import { m } from "@/paraglide/messages";
 
 export default function Header() {
   const { data: session } = authClient.useSession();
@@ -10,7 +11,7 @@ export default function Header() {
     (session?.user as { role?: string } | undefined)?.role === "admin";
 
   const links = [
-    { to: "/webinar", label: "Webinar" },
+    { to: "/webinar", label: m.nav_webinar() },
   ] as const;
 
   return (
@@ -30,7 +31,7 @@ export default function Header() {
               className="flex items-center gap-1.5 text-sm font-medium text-amber-500 hover:text-amber-400"
             >
               <Building2 className="h-4 w-4" />
-              Organizations
+              {m.nav_organizations()}
             </Link>
           )}
         </nav>

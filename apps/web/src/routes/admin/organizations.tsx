@@ -13,6 +13,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { m } from "@/paraglide/messages";
+import { getLocale } from "@/paraglide/runtime";
+
 async function tryClipboardWrite(text: string) {
   if (!navigator?.clipboard?.writeText) {
     return false;
@@ -44,6 +47,12 @@ function tryLegacyCopy(text: string) {
     document.body.removeChild(textArea);
   }
 }
+
+const getRoleLabel = (role?: string | null) => {
+  if (role === "admin") return m.role_admin();
+  if (role === "owner") return m.role_owner();
+  return m.role_member();
+};
 
 import { getUser } from "@/functions/get-user";
 import { useTRPC } from "@/utils/trpc";
@@ -114,14 +123,14 @@ function OrganizationsPage() {
     const showManualDialog = options?.showManualDialog ?? true;
     const clipboardSuccess = await tryClipboardWrite(link);
     if (clipboardSuccess) {
-      toast.success("Link copied!", { description: link });
+      toast.success(m.link_copied(), { description: link });
       setManualCopyUrl(null);
       return true;
     }
 
     const legacySuccess = tryLegacyCopy(link);
     if (legacySuccess) {
-      toast.success("Link copied!", { description: link });
+      toast.success(m.link_copied(), { description: link });
       setManualCopyUrl(null);
       return true;
     }
@@ -139,7 +148,7 @@ function OrganizationsPage() {
         queryClient.invalidateQueries({
           queryKey: trpc.organization.list.queryKey(),
         });
-        toast.success("Organization created successfully");
+        toast.success(m.organization_created());
       },
       onError: (error) => {
         toast.error(error.message);
@@ -153,7 +162,7 @@ function OrganizationsPage() {
         queryClient.invalidateQueries({
           queryKey: trpc.organization.list.queryKey(),
         });
-        toast.success("Organization deleted");
+        toast.success(m.organization_deleted());
       },
       onError: (error) => {
         toast.error(error.message);
@@ -181,7 +190,7 @@ function OrganizationsPage() {
       });
       return `${window.location.origin}${data.inviteLink}`;
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Invite failed");
+      toast.error(error instanceof Error ? error.message : m.invite_failed());
       return null;
     }
   };
@@ -192,7 +201,7 @@ function OrganizationsPage() {
         queryClient.invalidateQueries({
           queryKey: trpc.organization.list.queryKey(),
         });
-        toast.success("Invitation cancelled");
+        toast.success(m.invitation_cancelled());
       },
       onError: (error) => {
         toast.error(error.message);
@@ -204,9 +213,11 @@ function OrganizationsPage() {
     <div className="container mx-auto max-w-5xl py-8 px-4">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Organizations</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {m.organizations_title()}
+          </h1>
           <p className="text-muted-foreground">
-            Manage client organizations and invite users
+            {m.organizations_subtitle()}
           </p>
         </div>
         <CreateOrganizationDialog
@@ -216,14 +227,16 @@ function OrganizationsPage() {
       </div>
 
       {organizations.isLoading ? (
-        <div className="text-muted-foreground">Loading...</div>
+        <div className="text-muted-foreground">{m.loading()}</div>
       ) : organizations.data?.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Building2 className="text-muted-foreground mb-4 h-12 w-12" />
-            <h3 className="mb-2 text-lg font-medium">No organizations yet</h3>
+            <h3 className="mb-2 text-lg font-medium">
+              {m.no_organizations_title()}
+            </h3>
             <p className="text-muted-foreground mb-4 text-center">
-              Create your first organization to start inviting users.
+              {m.no_organizations_body()}
             </p>
             <CreateOrganizationDialog
               onSubmit={(name) => createOrgMutation.mutate({ name })}
@@ -268,10 +281,9 @@ function OrganizationsPage() {
           }}
         >
           <DialogHeader>
-            <DialogTitle>Copy Invite Link</DialogTitle>
+            <DialogTitle>{m.copy_invite_link()}</DialogTitle>
             <DialogDescription>
-              Clipboard access is not available. Please copy the link below
-              manually or try the Copy button.
+              {m.clipboard_unavailable()}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 flex gap-2">
@@ -290,11 +302,11 @@ function OrganizationsPage() {
               }}
             >
               <Copy className="h-4 w-4 mr-1" />
-              Copy
+              {m.copy_button()}
             </Button>
           </div>
           <DialogFooter>
-            <Button onClick={() => setManualCopyUrl(null)}>Close</Button>
+            <Button onClick={() => setManualCopyUrl(null)}>{m.close_button()}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -325,34 +337,33 @@ function CreateOrganizationDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={<Button />}>
         <Plus className="mr-2 h-4 w-4" />
-        New Organization
+        {m.new_organization()}
       </DialogTrigger>
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Create Organization</DialogTitle>
+            <DialogTitle>{m.create_organization()}</DialogTitle>
             <DialogDescription>
-              Create a new client organization. You'll be able to invite users
-              after creation.
+              {m.create_org_description()}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <Label htmlFor="org-name">Organization Name</Label>
+            <Label htmlFor="org-name">{m.organization_name()}</Label>
             <Input
               id="org-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Acme Corp"
+              placeholder={m.org_placeholder()}
               className="mt-2"
               autoFocus
             />
           </div>
           <DialogFooter>
             <DialogClose render={<Button variant="outline" />}>
-              Cancel
+              {m.cancel()}
             </DialogClose>
             <Button type="submit" disabled={!name.trim() || isPending}>
-              {isPending ? "Creating..." : "Create"}
+              {isPending ? m.creating() : m.create()}
             </Button>
           </DialogFooter>
         </form>
@@ -410,6 +421,7 @@ function OrganizationCard({
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const inviteCopyInputRef = useRef<HTMLInputElement>(null);
+  const locale = getLocale();
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -470,7 +482,7 @@ function OrganizationCard({
                 disabled={isDeleting}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                Delete Organization
+                {m.delete_organization()}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -482,16 +494,16 @@ function OrganizationCard({
           <div className="mb-3 flex items-center justify-between">
             <h4 className="flex items-center gap-2 text-sm font-medium">
               <Users className="h-4 w-4" />
-              Members ({organization.members.length})
+              {m.members_count({ count: organization.members.length })}
             </h4>
           </div>
           {organization.members.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
+                  <TableHead>{m.name_column()}</TableHead>
+                  <TableHead>{m.email_column()}</TableHead>
+                  <TableHead>{m.role_column()}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -509,7 +521,7 @@ function OrganizationCard({
                           member.role === "owner" ? "default" : "secondary"
                         }
                       >
-                        {member.role}
+                        {getRoleLabel(member.role)}
                       </Badge>
                     </TableCell>
                   </TableRow>
@@ -517,7 +529,7 @@ function OrganizationCard({
               </TableBody>
             </Table>
           ) : (
-            <p className="text-muted-foreground text-sm">No members yet</p>
+            <p className="text-muted-foreground text-sm">{m.no_members()}</p>
           )}
         </div>
 
@@ -526,7 +538,7 @@ function OrganizationCard({
           <div className="mb-3 flex items-center justify-between">
             <h4 className="flex items-center gap-2 text-sm font-medium">
               <Link2 className="h-4 w-4" />
-              Pending Invitations ({pendingInvites.length})
+              {m.pending_invitations_count({ count: pendingInvites.length })}
             </h4>
             <Dialog
               open={inviteDialogOpen}
@@ -540,7 +552,7 @@ function OrganizationCard({
             >
               <DialogTrigger render={<Button size="sm" variant="outline" />}>
                 <Plus className="mr-1 h-3 w-3" />
-                Invite
+                {m.invite_button()}
               </DialogTrigger>
               <DialogContent
                 onCloseAutoFocus={(event) => {
@@ -551,10 +563,11 @@ function OrganizationCard({
                 {inviteLink ? (
                   <>
                     <DialogHeader>
-                      <DialogTitle>Copy Invite Link</DialogTitle>
+                      <DialogTitle>{m.copy_invite_link()}</DialogTitle>
                       <DialogDescription>
-                        Share this link to invite a new member to{" "}
-                        {organization.name}.
+                        {m.share_invite_link({
+                          organization: organization.name,
+                        })}
                       </DialogDescription>
                     </DialogHeader>
                     <div className="py-4 flex gap-2">
@@ -577,25 +590,27 @@ function OrganizationCard({
                         }}
                       >
                         <Copy className="h-4 w-4 mr-1" />
-                        Copy
+                        {m.copy_button()}
                       </Button>
                     </div>
                     <DialogFooter>
                       <DialogClose render={<Button variant="outline" />}>
-                        Close
+                        {m.close_button()}
                       </DialogClose>
                     </DialogFooter>
                   </>
                 ) : (
                   <form onSubmit={handleInvite}>
                     <DialogHeader>
-                      <DialogTitle>Invite User</DialogTitle>
+                      <DialogTitle>{m.invite_user_title()}</DialogTitle>
                       <DialogDescription>
-                        Send an invitation link to join {organization.name}
+                        {m.invite_user_description({
+                          organization: organization.name,
+                        })}
                       </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
-                      <Label htmlFor="invite-email">Email Address</Label>
+                      <Label htmlFor="invite-email">{m.email_address()}</Label>
                       <Input
                         id="invite-email"
                         type="email"
@@ -608,13 +623,13 @@ function OrganizationCard({
                     </div>
                     <DialogFooter>
                       <DialogClose render={<Button variant="outline" />}>
-                        Cancel
+                        {m.cancel()}
                       </DialogClose>
                       <Button
                         type="submit"
                         disabled={!inviteEmail.trim() || isCreatingInvite}
                       >
-                        {isCreatingInvite ? "Creating..." : "Create Invite Link"}
+                        {isCreatingInvite ? m.creating() : m.create_invite_link()}
                       </Button>
                     </DialogFooter>
                   </form>
@@ -626,10 +641,10 @@ function OrganizationCard({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Expires</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
+                  <TableHead>{m.email_column()}</TableHead>
+                  <TableHead>{m.role_column()}</TableHead>
+                  <TableHead>{m.expires_column()}</TableHead>
+                  <TableHead className="w-[100px]">{m.actions_column()}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -640,11 +655,11 @@ function OrganizationCard({
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">
-                        {invite.role || "member"}
+                        {getRoleLabel(invite.role)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {new Date(invite.expiresAt).toLocaleDateString()}
+                      {new Date(invite.expiresAt).toLocaleDateString(locale)}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
@@ -655,7 +670,7 @@ function OrganizationCard({
                             const link = `${window.location.origin}/invite/${invite.id}`;
                             onCopyInvite(link);
                           }}
-                          title="Copy invite link"
+                          title={m.copy_invite_link_title()}
                         >
                           <Copy className="h-3 w-3" />
                         </Button>
@@ -663,7 +678,7 @@ function OrganizationCard({
                           size="icon-xs"
                           variant="ghost"
                           onClick={() => onCancelInvite(invite.id)}
-                          title="Cancel invitation"
+                          title={m.cancel_invitation_title()}
                         >
                           <X className="h-3 w-3" />
                         </Button>
@@ -675,7 +690,7 @@ function OrganizationCard({
             </Table>
           ) : (
             <p className="text-muted-foreground text-sm">
-              No pending invitations
+              {m.no_pending_invitations()}
             </p>
           )}
         </div>
