@@ -11,7 +11,15 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
-export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () => void }) {
+type SignInFormProps = {
+  onSwitchToSignUp?: () => void;
+  showSignUpLink?: boolean;
+};
+
+export default function SignInForm({
+  onSwitchToSignUp,
+  showSignUpLink = true,
+}: SignInFormProps) {
   const navigate = useNavigate({
     from: "/",
   });
@@ -124,15 +132,17 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () 
         </form.Subscribe>
       </form>
 
-      <div className="mt-4 text-center">
-        <Button
-          variant="link"
-          onClick={onSwitchToSignUp}
-          className="text-indigo-600 hover:text-indigo-800"
-        >
-          {m.need_account_sign_up()}
-        </Button>
-      </div>
+      {showSignUpLink && (
+        <div className="mt-4 text-center">
+          <Button
+            variant="link"
+            onClick={onSwitchToSignUp}
+            className="text-indigo-600 hover:text-indigo-800"
+          >
+            {m.need_account_sign_up()}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

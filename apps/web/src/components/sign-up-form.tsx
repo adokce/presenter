@@ -12,15 +12,17 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
 interface SignUpFormProps {
-  onSwitchToSignIn: () => void;
+  onSwitchToSignIn?: () => void;
   inviteEmail?: string;
   inviteId?: string;
+  showSignInLink?: boolean;
 }
 
 export default function SignUpForm({
   onSwitchToSignIn,
   inviteEmail,
   inviteId,
+  showSignInLink = true,
 }: SignUpFormProps) {
   const navigate = useNavigate({
     from: "/",
@@ -168,15 +170,17 @@ export default function SignUpForm({
         </form.Subscribe>
       </form>
 
-      <div className="mt-4 text-center">
-        <Button
-          variant="link"
-          onClick={onSwitchToSignIn}
-          className="text-indigo-600 hover:text-indigo-800"
-        >
-          {m.already_have_account_sign_in()}
-        </Button>
-      </div>
+      {showSignInLink && (
+        <div className="mt-4 text-center">
+          <Button
+            variant="link"
+            onClick={onSwitchToSignIn}
+            className="text-indigo-600 hover:text-indigo-800"
+          >
+            {m.already_have_account_sign_in()}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
