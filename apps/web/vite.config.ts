@@ -30,6 +30,7 @@ export default defineConfig({
   ],
   server: {
     port: 3003,
+    allowedHosts: ["omarchy-x220"],
   },
   preview: {
     allowedHosts: true, // Allow all hosts in preview mode (for Coolify deployments)
