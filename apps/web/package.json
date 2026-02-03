@@ -3,10 +3,10 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build",
-        "serve": "vite preview",
-        "dev": "vite dev --host",
-        "host": "vite dev --host"
+        "build": "bunx --bun vite build",
+        "serve": "bunx --bun vite preview",
+        "dev": "bunx --bun vite dev --host",
+        "host": "bunx --bun vite dev --host"
     },
     "dependencies": {
         "@ai-sdk/elevenlabs": "^1.0.21",

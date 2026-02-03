@@ -6,12 +6,19 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { eq, and, count } from "drizzle-orm";
 
+const trustedOrigin1 = process.env.CORS_ORIGIN; // e.g., "http://localhost:3003"
+const trustedOrigin2 = process.env.TAILSCALE_URL; // e.g., "http://100.80.3.78:3003"
+const trustedOrigin3 = process.env.TAILSCALE_URL_MAGIC; // e.g., "http://omarchy-x220:3003"
+const trustedOriginsList = [trustedOrigin1, trustedOrigin2, trustedOrigin3].filter(
+  (value): value is string => Boolean(value && value.trim())
+);
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "sqlite",
     schema: schema,
   }),
-  trustedOrigins: [process.env.CORS_ORIGIN || ""],
+  trustedOrigins: trustedOriginsList,
   emailAndPassword: {
     enabled: true,
   },

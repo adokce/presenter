@@ -26,7 +26,7 @@ function createContentHash(
   nextText?: string
 ): string {
   const content = `${pdfId}-${pageNumber}-${totalPages}-${textContent || ""}-${previousText || ""}-${nextText || ""}`
-  return new Bun.CryptoHasher("sha256").update(content).digest("hex")
+  return Bun.CryptoHasher.hash("sha256", content, "hex")
 }
 
 export const Route = createFileRoute("/api/generate-script/$")({
@@ -198,4 +198,3 @@ Return ONLY the script text, nothing else. No meta-commentary, no labels, just t
     },
   },
 })
-
