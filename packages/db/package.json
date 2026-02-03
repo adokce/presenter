@@ -19,7 +19,7 @@
         "db:local": "turso dev --db-file local.db",
         "db:push": "drizzle-kit push",
         "db:generate": "drizzle-kit generate",
-        "db:studio": "drizzle-kit studio --host 0.0.0.0 --port 3013",
+        "db:studio": "drizzle-kit studio --port 3013",
         "db:migrate": "drizzle-kit migrate"
     },
     "devDependencies": {

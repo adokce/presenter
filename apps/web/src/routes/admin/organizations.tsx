@@ -402,7 +402,7 @@ function OrganizationCard({
   onCopyInvite: (
     url: string,
     options?: { showManualDialog?: boolean }
-  ) => void;
+  ) => Promise<boolean>;
   isDeleting: boolean;
   isCreatingInvite: boolean;
 }) {
@@ -418,9 +418,16 @@ function OrganizationCard({
 
     const nextLink = await onCreateInvite(email, "member");
     if (!nextLink) return;
-    setInviteLink(nextLink);
+
     setInviteEmail("");
-    onCopyInvite(nextLink, { showManualDialog: false });
+    const copied = await onCopyInvite(nextLink, { showManualDialog: false });
+    if (copied) {
+      setInviteLink(null);
+      setInviteDialogOpen(false);
+      return;
+    }
+
+    setInviteLink(nextLink);
   };
 
   useLayoutEffect(() => {
@@ -559,9 +566,15 @@ function OrganizationCard({
                       />
                       <Button
                         variant="secondary"
-                        onClick={() =>
-                          onCopyInvite(inviteLink, { showManualDialog: false })
-                        }
+                        onClick={async () => {
+                          const copied = await onCopyInvite(inviteLink, {
+                            showManualDialog: false,
+                          });
+                          if (copied) {
+                            setInviteLink(null);
+                            setInviteDialogOpen(false);
+                          }
+                        }}
                       >
                         <Copy className="h-4 w-4 mr-1" />
                         Copy
