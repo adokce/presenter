@@ -11,7 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WebinarRouteImport } from './routes/webinar'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as HealthcheckRouteImport } from './routes/healthcheck'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InviteInvitationIdRouteImport } from './routes/invite/$invitationId'
 import { Route as AdminOrganizationsRouteImport } from './routes/admin/organizations'
@@ -31,9 +31,9 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
+const HealthcheckRoute = HealthcheckRouteImport.update({
+  id: '/healthcheck',
+  path: '/healthcheck',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -79,7 +79,7 @@ const ApiAudioSplatRoute = ApiAudioSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
+  '/healthcheck': typeof HealthcheckRoute
   '/login': typeof LoginRoute
   '/webinar': typeof WebinarRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
@@ -92,7 +92,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
+  '/healthcheck': typeof HealthcheckRoute
   '/login': typeof LoginRoute
   '/webinar': typeof WebinarRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
@@ -106,7 +106,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
+  '/healthcheck': typeof HealthcheckRoute
   '/login': typeof LoginRoute
   '/webinar': typeof WebinarRoute
   '/admin/organizations': typeof AdminOrganizationsRoute
@@ -121,7 +121,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/dashboard'
+    | '/healthcheck'
     | '/login'
     | '/webinar'
     | '/admin/organizations'
@@ -134,7 +134,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/dashboard'
+    | '/healthcheck'
     | '/login'
     | '/webinar'
     | '/admin/organizations'
@@ -147,7 +147,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/dashboard'
+    | '/healthcheck'
     | '/login'
     | '/webinar'
     | '/admin/organizations'
@@ -161,7 +161,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DashboardRoute: typeof DashboardRoute
+  HealthcheckRoute: typeof HealthcheckRoute
   LoginRoute: typeof LoginRoute
   WebinarRoute: typeof WebinarRoute
   AdminOrganizationsRoute: typeof AdminOrganizationsRoute
@@ -189,11 +189,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
+    '/healthcheck': {
+      id: '/healthcheck'
+      path: '/healthcheck'
+      fullPath: '/healthcheck'
+      preLoaderRoute: typeof HealthcheckRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -257,7 +257,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DashboardRoute: DashboardRoute,
+  HealthcheckRoute: HealthcheckRoute,
   LoginRoute: LoginRoute,
   WebinarRoute: WebinarRoute,
   AdminOrganizationsRoute: AdminOrganizationsRoute,

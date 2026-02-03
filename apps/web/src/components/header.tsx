@@ -10,8 +10,6 @@ export default function Header() {
     (session?.user as { role?: string } | undefined)?.role === "admin";
 
   const links = [
-    { to: "/", label: "Home" },
-    { to: "/dashboard", label: "Dashboard" },
     { to: "/webinar", label: "Webinar" },
   ] as const;
 

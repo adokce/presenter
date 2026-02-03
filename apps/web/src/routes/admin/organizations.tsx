@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import {
@@ -13,25 +13,20 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-function copyToClipboard(
-  text: string,
-  onSuccess: () => void,
-  onFallback: () => void
-) {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(onSuccess).catch(() => {
-      fallbackCopyToClipboard(text, onSuccess, onFallback);
-    });
-  } else {
-    fallbackCopyToClipboard(text, onSuccess, onFallback);
+async function tryClipboardWrite(text: string) {
+  if (!navigator?.clipboard?.writeText) {
+    return false;
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (error) {
+    return false;
   }
 }
 
-function fallbackCopyToClipboard(
-  text: string,
-  onSuccess: () => void,
-  onFallback: () => void
-) {
+function tryLegacyCopy(text: string) {
   const textArea = document.createElement("textarea");
   textArea.value = text;
   textArea.style.position = "fixed";
@@ -42,16 +37,11 @@ function fallbackCopyToClipboard(
   textArea.select();
 
   try {
-    const successful = document.execCommand("copy");
-    document.body.removeChild(textArea);
-    if (successful) {
-      onSuccess();
-    } else {
-      onFallback();
-    }
+    return document.execCommand("copy");
   } catch (err) {
+    return false;
+  } finally {
     document.body.removeChild(textArea);
-    onFallback();
   }
 }
 
@@ -104,7 +94,7 @@ export const Route = createFileRoute("/admin/organizations")({
       throw redirect({ to: "/login" });
     }
     if (context.session.user.role !== "admin") {
-      throw redirect({ to: "/dashboard" });
+      throw redirect({ to: "/webinar" });
     }
   },
 });
@@ -113,8 +103,35 @@ function OrganizationsPage() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const [manualCopyUrl, setManualCopyUrl] = useState<string | null>(null);
+  const manualCopyInputRef = useRef<HTMLInputElement>(null);
 
   const organizations = useQuery(trpc.organization.list.queryOptions());
+
+  const copyInviteLink = async (
+    link: string,
+    options?: { showManualDialog?: boolean }
+  ) => {
+    const showManualDialog = options?.showManualDialog ?? true;
+    const clipboardSuccess = await tryClipboardWrite(link);
+    if (clipboardSuccess) {
+      toast.success("Link copied!", { description: link });
+      setManualCopyUrl(null);
+      return true;
+    }
+
+    const legacySuccess = tryLegacyCopy(link);
+    if (legacySuccess) {
+      toast.success("Link copied!", { description: link });
+      setManualCopyUrl(null);
+      return true;
+    }
+
+    // Fallback dialog will guide manual copy; no toast needed.
+    if (showManualDialog) {
+      setManualCopyUrl(link);
+    }
+    return false;
+  };
 
   const createOrgMutation = useMutation(
     trpc.organization.create.mutationOptions({
@@ -145,19 +162,29 @@ function OrganizationsPage() {
   );
 
   const createInviteMutation = useMutation(
-    trpc.organization.createInvitation.mutationOptions({
-      onSuccess: (data) => {
-        queryClient.invalidateQueries({
-          queryKey: trpc.organization.list.queryKey(),
-        });
-        const fullLink = `${window.location.origin}${data.inviteLink}`;
-        copyToClipboard(fullLink, () => toast.success("Invite link copied to clipboard!"), () => setManualCopyUrl(fullLink));
-      },
-      onError: (error) => {
-        toast.error(error.message);
-      },
-    })
+    trpc.organization.createInvitation.mutationOptions()
   );
+
+  const handleCreateInvite = async (
+    organizationId: string,
+    email: string,
+    role: "member" | "admin"
+  ) => {
+    try {
+      const data = await createInviteMutation.mutateAsync({
+        organizationId,
+        email,
+        role,
+      });
+      await queryClient.invalidateQueries({
+        queryKey: trpc.organization.list.queryKey(),
+      });
+      return `${window.location.origin}${data.inviteLink}`;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Invite failed");
+      return null;
+    }
+  };
 
   const cancelInviteMutation = useMutation(
     trpc.organization.cancelInvitation.mutationOptions({
@@ -212,16 +239,12 @@ function OrganizationsPage() {
               organization={org}
               onDelete={() => deleteOrgMutation.mutate({ id: org.id })}
               onCreateInvite={(email, role) =>
-                createInviteMutation.mutate({
-                  organizationId: org.id,
-                  email,
-                  role,
-                })
+                handleCreateInvite(org.id, email, role)
               }
               onCancelInvite={(invitationId) =>
                 cancelInviteMutation.mutate({ invitationId })
               }
-              onCopyFallback={(url) => setManualCopyUrl(url)}
+              onCopyInvite={(url, options) => copyInviteLink(url, options)}
               isDeleting={deleteOrgMutation.isPending}
               isCreatingInvite={createInviteMutation.isPending}
             />
@@ -229,33 +252,40 @@ function OrganizationsPage() {
         </div>
       )}
 
-      <Dialog open={!!manualCopyUrl} onOpenChange={() => setManualCopyUrl(null)}>
-        <DialogContent>
+      <Dialog
+        open={!!manualCopyUrl}
+        onOpenChange={(open) => {
+          if (!open) {
+            setManualCopyUrl(null);
+          }
+        }}
+      >
+        <DialogContent
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            manualCopyInputRef.current?.focus();
+            manualCopyInputRef.current?.select();
+          }}
+        >
           <DialogHeader>
             <DialogTitle>Copy Invite Link</DialogTitle>
             <DialogDescription>
-              Clipboard access is not available. Please copy the link below manually or try the Copy button.
+              Clipboard access is not available. Please copy the link below
+              manually or try the Copy button.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 flex gap-2">
             <Input
+              ref={manualCopyInputRef}
               value={manualCopyUrl || ""}
               readOnly
               className="w-full"
-              onFocus={(e) => e.target.select()}
             />
             <Button
               variant="secondary"
               onClick={() => {
                 if (manualCopyUrl) {
-                  copyToClipboard(
-                    manualCopyUrl,
-                    () => {
-                      toast.success("Copied to clipboard!");
-                      setManualCopyUrl(null);
-                    },
-                    () => toast.error("Copy failed. Please select and copy manually.")
-                  );
+                  void copyInviteLink(manualCopyUrl);
                 }
               }}
             >
@@ -358,29 +388,46 @@ function OrganizationCard({
   onDelete,
   onCreateInvite,
   onCancelInvite,
-  onCopyFallback,
+  onCopyInvite,
   isDeleting,
   isCreatingInvite,
 }: {
   organization: Organization;
   onDelete: () => void;
-  onCreateInvite: (email: string, role: "member" | "admin") => void;
+  onCreateInvite: (
+    email: string,
+    role: "member" | "admin"
+  ) => Promise<string | null>;
   onCancelInvite: (invitationId: string) => void;
-  onCopyFallback: (url: string) => void;
+  onCopyInvite: (
+    url: string,
+    options?: { showManualDialog?: boolean }
+  ) => void;
   isDeleting: boolean;
   isCreatingInvite: boolean;
 }) {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const inviteCopyInputRef = useRef<HTMLInputElement>(null);
 
-  const handleInvite = (e: React.FormEvent) => {
+  const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (inviteEmail.trim()) {
-      onCreateInvite(inviteEmail.trim(), "member");
-      setInviteEmail("");
-      setInviteDialogOpen(false);
-    }
+    const email = inviteEmail.trim();
+    if (!email) return;
+
+    const nextLink = await onCreateInvite(email, "member");
+    if (!nextLink) return;
+    setInviteLink(nextLink);
+    setInviteEmail("");
+    onCopyInvite(nextLink, { showManualDialog: false });
   };
+
+  useLayoutEffect(() => {
+    if (!inviteLink) return;
+    inviteCopyInputRef.current?.focus();
+    inviteCopyInputRef.current?.select();
+  }, [inviteLink]);
 
   const pendingInvites = organization.invitations.filter(
     (inv) => inv.status === "pending"
@@ -474,43 +521,91 @@ function OrganizationCard({
               <Link2 className="h-4 w-4" />
               Pending Invitations ({pendingInvites.length})
             </h4>
-            <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+            <Dialog
+              open={inviteDialogOpen}
+              onOpenChange={(open) => {
+                setInviteDialogOpen(open);
+                if (!open) {
+                  setInviteEmail("");
+                  setInviteLink(null);
+                }
+              }}
+            >
               <DialogTrigger render={<Button size="sm" variant="outline" />}>
                 <Plus className="mr-1 h-3 w-3" />
                 Invite
               </DialogTrigger>
-              <DialogContent>
-                <form onSubmit={handleInvite}>
-                  <DialogHeader>
-                    <DialogTitle>Invite User</DialogTitle>
-                    <DialogDescription>
-                      Send an invitation link to join {organization.name}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="py-4">
-                    <Label htmlFor="invite-email">Email Address</Label>
-                    <Input
-                      id="invite-email"
-                      type="email"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      placeholder="user@example.com"
-                      className="mt-2"
-                      autoFocus
-                    />
-                  </div>
-                  <DialogFooter>
-                    <DialogClose render={<Button variant="outline" />}>
-                      Cancel
-                    </DialogClose>
-                    <Button
-                      type="submit"
-                      disabled={!inviteEmail.trim() || isCreatingInvite}
-                    >
-                      {isCreatingInvite ? "Creating..." : "Create Invite Link"}
-                    </Button>
-                  </DialogFooter>
-                </form>
+              <DialogContent
+                onCloseAutoFocus={(event) => {
+                  // Prevent focus from jumping back to the trigger when closing.
+                  event.preventDefault();
+                }}
+              >
+                {inviteLink ? (
+                  <>
+                    <DialogHeader>
+                      <DialogTitle>Copy Invite Link</DialogTitle>
+                      <DialogDescription>
+                        Share this link to invite a new member to{" "}
+                        {organization.name}.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 flex gap-2">
+                      <Input
+                        ref={inviteCopyInputRef}
+                        value={inviteLink}
+                        readOnly
+                        className="w-full"
+                      />
+                      <Button
+                        variant="secondary"
+                        onClick={() =>
+                          onCopyInvite(inviteLink, { showManualDialog: false })
+                        }
+                      >
+                        <Copy className="h-4 w-4 mr-1" />
+                        Copy
+                      </Button>
+                    </div>
+                    <DialogFooter>
+                      <DialogClose render={<Button variant="outline" />}>
+                        Close
+                      </DialogClose>
+                    </DialogFooter>
+                  </>
+                ) : (
+                  <form onSubmit={handleInvite}>
+                    <DialogHeader>
+                      <DialogTitle>Invite User</DialogTitle>
+                      <DialogDescription>
+                        Send an invitation link to join {organization.name}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                      <Label htmlFor="invite-email">Email Address</Label>
+                      <Input
+                        id="invite-email"
+                        type="email"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
+                        placeholder="user@example.com"
+                        className="mt-2"
+                        autoFocus
+                      />
+                    </div>
+                    <DialogFooter>
+                      <DialogClose render={<Button variant="outline" />}>
+                        Cancel
+                      </DialogClose>
+                      <Button
+                        type="submit"
+                        disabled={!inviteEmail.trim() || isCreatingInvite}
+                      >
+                        {isCreatingInvite ? "Creating..." : "Create Invite Link"}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                )}
               </DialogContent>
             </Dialog>
           </div>
@@ -545,7 +640,7 @@ function OrganizationCard({
                           variant="ghost"
                           onClick={() => {
                             const link = `${window.location.origin}/invite/${invite.id}`;
-                            copyToClipboard(link, () => toast.success("Link copied!"), () => onCopyFallback(link));
+                            onCopyInvite(link);
                           }}
                           title="Copy invite link"
                         >
